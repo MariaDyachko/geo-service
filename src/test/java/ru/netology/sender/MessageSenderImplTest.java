@@ -1,51 +1,65 @@
 package ru.netology.sender;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import ru.netology.entity.Country;
 import ru.netology.entity.Location;
-import ru.netology.geo.GeoServiceImpl;
-import ru.netology.i18n.LocalizationServiceImpl;
+import ru.netology.geo.GeoService;
+import ru.netology.i18n.LocalizationService;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.*;
 class MessageSenderImplTest {
 
     @DisplayName("sender")
-    @org.junit.jupiter.api.Test
-    void sendMessage() {
+    @Test
+    void testSender() {
+        final String testIp = "172.";
+        final String testGreeting = "Добро пожаловать";
 
-        LocalizationServiceImpl loc = new LocalizationServiceImpl();
-        GeoServiceImpl geoService = new GeoServiceImpl();
-        MessageSenderImpl sender = Mockito.spy(new MessageSenderImpl(geoService, loc));
+        final String testIpEng = "96.";
+        final String testGreetingEng = "Welcome";
+
+
+        GeoService geoService = Mockito.mock(GeoService.class);
+        Mockito.when(geoService.byIp(Mockito.any()))
+                .thenReturn(new Location(null, Country.RUSSIA, null, 0));
+
+        LocalizationService localizationService = Mockito.mock(LocalizationService.class);
+        Mockito.when(localizationService.locale(Mockito.any()))
+                .thenReturn(testGreeting);
+
+        MessageSender messageSender = new MessageSenderImpl(geoService, localizationService);
 
         Map<String, String> headers = new HashMap<String, String>();
-        headers.put(MessageSenderImpl.IP_ADDRESS_HEADER, "172.123.12.19");
-        Mockito.when(sender.send(headers)).thenReturn("Добро пожаловать");
+        headers.put(MessageSenderImpl.IP_ADDRESS_HEADER, testIp);
 
-        String actual = sender.send(headers);
-        assertEquals(actual, "Добро пожаловать");
+        Assertions.assertTrue(messageSender.send(headers).contains(testGreeting));
 
-        headers.put(MessageSenderImpl.IP_ADDRESS_HEADER, "96.123.12.19");
-        Mockito.when(sender.send(headers)).thenReturn("Welcome");
-        //
 
+
+
+        GeoService geoServiceEng = Mockito.mock(GeoService.class);
+        Mockito.when(geoServiceEng.byIp(Mockito.any()))
+                .thenReturn(new Location(null, Country.USA, null, 0));
+
+        LocalizationService localizationServiceEng = Mockito.mock(LocalizationService.class);
+        Mockito.when(localizationServiceEng.locale(Mockito.any()))
+                .thenReturn(testGreetingEng);
+
+        MessageSender messageSenderEng = new MessageSenderImpl(geoServiceEng, localizationServiceEng);
+
+        Map<String, String> headersEng = new HashMap<String, String>();
+        headersEng.put(MessageSenderImpl.IP_ADDRESS_HEADER, testIpEng);
+
+        Assertions.assertTrue(messageSenderEng.send(headersEng).contains(testGreetingEng));
     }
-    @DisplayName("geoLocation")
-    @Test
-    void tryLocation(){
-        var geo = Mockito.mock(GeoServiceImpl.class);
-        Mockito.when(geo.byIp("96.123.12.19")).thenReturn(new Location("New York", Country.USA, null,  0));
-    }
 
-    @DisplayName("location")
-    @Test
-    void localeTest(){
-        var loc = Mockito.mock(LocalizationServiceImpl.class);
-        Mockito.when(loc.locale(Country.RUSSIA)).thenReturn("Добро пожаловать");
-    }
+
+
+
+
 }
